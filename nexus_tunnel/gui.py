@@ -1,44 +1,54 @@
-"""Custom GUI widgets and utilities."""
+"""Modern GUI widgets and utilities with glassmorphism effects."""
 
 import tkinter as tk
 from tkinter import scrolledtext
 import customtkinter as ctk
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 import platform
-from typing import Callable
+from typing import Callable, Optional
+import threading
 
 
 class ColorPalette:
-    """Dark theme colors."""
-    BG = "#050505"
-    CARD = "#111111"
-    CARD2 = "#1B1B1B"
-    BORDER = "#7A0000"
-    ACCENT = "#C40000"
-    GLOW = "#FF3A3A"
-    TEXT = "#FFFFFF"
-    MUTED = "#9A9A9A"
-    OK = "#22C55E"
-    ERR = "#FF3B3B"
-    WARN = "#FF9800"
-    BLUE = "#B00000"
-    TEAL = "#8A0000"
+    """Modern vibrant color theme."""
+    # Base
+    BG = "#0a0e27"           # Deep navy
+    CARD = "#0f1629"         # Slightly lighter navy
+    CARD_HOVER = "#151d3a"   # Card hover state
+    BORDER = "#1a4d7a"       # Soft blue border
+    
+    # Accents - Neon vibrancy
+    ACCENT = "#00d9ff"       # Cyan
+    ACCENT_DARK = "#0099cc"  # Darker cyan
+    ACCENT_ALT = "#ff006e"   # Pink accent
+    
+    # Status
+    GLOW = "#ff3366"         # Neon pink glow
+    TEXT = "#f5f7ff"         # Light text
+    MUTED = "#8892b0"        # Muted secondary text
+    OK = "#00ff88"           # Bright green
+    ERR = "#ff3333"          # Bright red
+    WARN = "#ffaa00"         # Bright orange
+    
+    # Gradients
+    PRIMARY_START = "#00d9ff"
+    PRIMARY_END = "#0099cc"
 
 
 class Fonts:
-    """Font definitions."""
+    """Modern font definitions."""
     def __init__(self):
         ff = ('Segoe UI' if platform.system() == 'Windows'
               else 'Helvetica Neue' if platform.system() == 'Darwin'
-              else 'DejaVu Sans')
-        fm = ('Consolas' if platform.system() == 'Windows'
+              else 'DejaVu Sans')\n        fm = ('Consolas' if platform.system() == 'Windows'
               else 'Menlo' if platform.system() == 'Darwin'
               else 'DejaVu Sans Mono')
-        self.title = (ff, 22, 'bold')
-        self.heading = (ff, 15, 'bold')
-        self.label = (ff, 13, 'bold')
-        self.body = (ff, 12)
-        self.small = (ff, 10)
+        self.title = (ff, 28, 'bold')
+        self.heading = (ff, 16, 'bold')
+        self.subhead = (ff, 13, 'bold')
+        self.label = (ff, 12, 'bold')
+        self.body = (ff, 11)
+        self.small = (ff, 9)
         self.mono = (fm, 10)
 
 
@@ -50,62 +60,67 @@ def hex_lerp(a: str, b: str, t: float) -> str:
     return f'#{int(ar+(br-ar)*t):02x}{int(ag+(bg-ag)*t):02x}{int(ab+(bb-ab)*t):02x}'
 
 
-def styled_entry(parent, text: str = '', width: int = 260) -> ctk.CTkEntry:
-    """Create a styled input field."""
+def styled_entry(parent, text: str = '', width: int = 260, label: str = '') -> ctk.CTkEntry:
+    """Create a modern input field with optional label."""
     e = ctk.CTkEntry(
         parent,
-        fg_color=ColorPalette.CARD2,
+        fg_color=ColorPalette.CARD,
         text_color=ColorPalette.TEXT,
         font=Fonts().body,
         width=width,
-        corner_radius=8,
+        height=36,
+        corner_radius=10,
         border_color=ColorPalette.BORDER,
-        border_width=1,
+        border_width=1.5,
+        placeholder_text=label if label else '',
+        placeholder_text_color=ColorPalette.MUTED,
     )
     if text:
         e.insert(0, text)
     return e
 
 
-def card_frame(parent, padx: int = 20, pady: int = 16) -> ctk.CTkFrame:
-    """Create a styled card container."""
+def card_frame(parent, bg_color: str = None) -> ctk.CTkFrame:
+    """Create a modern card with glassmorphism effect."""
     return ctk.CTkFrame(
         parent,
-        fg_color=ColorPalette.CARD,
-        corner_radius=12,
+        fg_color=bg_color or ColorPalette.CARD,
+        corner_radius=16,
         border_color=ColorPalette.BORDER,
-        border_width=1,
+        border_width=1.5,
     )
 
 
-def log_box(parent, height: int = 8) -> scrolledtext.ScrolledText:
-    """Create a styled log display."""
+def log_box(parent, height: int = 10) -> scrolledtext.ScrolledText:
+    """Create a modern log display with syntax highlighting."""
     t = scrolledtext.ScrolledText(
         parent,
-        bg='#060210',
-        fg='#b39ddb',
+        bg=ColorPalette.BG,
+        fg=ColorPalette.TEXT,
         font=Fonts().mono,
-        insertbackground=ColorPalette.GLOW,
+        insertbackground=ColorPalette.ACCENT,
         relief='flat',
         height=height,
         wrap='word',
-        highlightthickness=1,
-        highlightbackground=ColorPalette.BORDER,
+        highlightthickness=0,
         state='disabled',
+        bd=0,
     )
-    for tag, col in [
-        ('ok', ColorPalette.OK),
-        ('err', ColorPalette.ERR),
-        ('warn', ColorPalette.WARN),
-        ('info', ColorPalette.GLOW),
-        ('dim', ColorPalette.MUTED),
-    ]:
-        t.tag_config(tag, foreground=col)
+    # Configure tags with modern colors
+    tag_config = [
+        ('ok', ColorPalette.OK, 'bold'),
+        ('err', ColorPalette.ERR, 'bold'),
+        ('warn', ColorPalette.WARN, 'bold'),
+        ('info', ColorPalette.ACCENT, 'normal'),
+        ('dim', ColorPalette.MUTED, 'normal'),
+    ]
+    for tag, col, weight in tag_config:
+        t.tag_config(tag, foreground=col, font=(Fonts().mono[0], Fonts().mono[1], weight))
     return t
 
 
-def log_append(widget, msg: str, tag: str = ''):
-    """Append a line to the log box."""
+def log_append(widget, msg: str, tag: str = '', with_time: bool = True):
+    """Append a styled line to the log box."""
     def _do():
         try:
             if not widget.winfo_exists():
@@ -113,91 +128,55 @@ def log_append(widget, msg: str, tag: str = ''):
         except Exception:
             return
         import time
-        ts = time.strftime('%H:%M:%S')
         widget.config(state='normal')
-        widget.insert(tk.END, f'[{ts}]  ', 'dim')
+        if with_time:
+            ts = time.strftime('%H:%M:%S')
+            widget.insert(tk.END, f'[{ts}]  ', 'dim')
         widget.insert(tk.END, msg + '\n', tag)
         widget.see(tk.END)
         widget.config(state='disabled')
     widget.after(0, _do)
 
 
-def icon_button(
+def modern_button(
     parent,
     text: str,
     icon_name: str,
     fg_color: str,
     command: Callable,
-    padx: int = 18,
-    pady: int = 8,
+    width: int = 140,
+    height: int = 40,
     icon_size: int = 20,
 ) -> ctk.CTkButton:
-    """Create a button with icon."""
-    icon = _make_icon(icon_name, icon_size, ColorPalette.TEXT)
+    """Create a modern pill-shaped button."""
+    icon = _make_icon(icon_name, icon_size, '#ffffff')
+    hover_color = hex_lerp(fg_color, '#ffffff', 0.25)
     return ctk.CTkButton(
         parent,
         text=text,
         image=icon,
         compound='left',
         fg_color=fg_color,
-        hover_color=hex_lerp(fg_color, '#ffffff', 0.18),
-        text_color=ColorPalette.TEXT,
+        hover_color=hover_color,
+        text_color='#ffffff',
         font=Fonts().label,
-        corner_radius=12,
-        bg_color=_parent_bg(parent),
+        corner_radius=20,  # Pill shape
+        height=height,
+        width=width,
+        border_width=0,
         command=command,
     )
 
 
-def _parent_bg(parent) -> str:
-    """Get parent background color."""
-    try:
-        return str(parent.cget('bg'))
-    except Exception:
-        try:
-            return str(parent.cget('fg_color'))
-        except Exception:
-            return ColorPalette.BG
+def status_badge(parent, text: str, status: str = 'info', font_size: int = 10) -> ctk.CTkLabel:
+    \"\"\"Create a modern status badge.\"\"\"
+    color_map = {\n        'ok': ColorPalette.OK,\n        'err': ColorPalette.ERR,\n        'warn': ColorPalette.WARN,\n        'info': ColorPalette.ACCENT,\n        'dim': ColorPalette.MUTED,\n    }\n    color = color_map.get(status, ColorPalette.ACCENT)\n    return ctk.CTkLabel(\n        parent,\n        text=text,\n        font=(Fonts().body[0], font_size, 'bold'),\n        text_color=color,\n        fg_color='transparent',\n    )
+
+
+def section_title(parent, text: str) -> ctk.CTkLabel:\n    \"\"\"Create a modern section title with accent line.\"\"\"\n    return ctk.CTkLabel(\n        parent,\n        text=text,\n        font=Fonts().heading,\n        text_color=ColorPalette.TEXT,\n        fg_color='transparent',\n    )
 
 
 _icon_cache = {}
 
 
-def _make_icon(name: str, size: int = 16, fg: str = '#f0e6ff') -> ctk.CTkImage:
-    """Generate a small icon by name."""
-    key = (name, size, fg)
-    if key in _icon_cache:
-        return _icon_cache[key]
-
-    s2 = size * 2
-    r_, g_, b_ = int(fg[1:3], 16), int(fg[3:5], 16), int(fg[5:7], 16)
-    c = (r_, g_, b_, 255)
-    img = Image.new('RGBA', (s2, s2), (r_, g_, b_, 0))
-    d = ImageDraw.Draw(img)
-    m = s2
-
-    if name == 'host':
-        d.rectangle([m*2//8, m*3//8, m*6//8, m*7//8], outline=c, width=max(2, m//10))
-        d.line([m//2, m*1//8, m//2, m*5//8], fill=c, width=max(2, m//10))
-        d.polygon([(m*3//8, m*3//8), (m//2, m*1//8), (m*5//8, m*3//8)], fill=c)
-    elif name == 'join':
-        d.arc([m*1//8, m*2//8, m//2, m*6//8], 90, 270, fill=c, width=max(2, m//8))
-        d.arc([m//2, m*2//8, m*7//8, m*6//8], 270, 90, fill=c, width=max(2, m//8))
-    elif name == 'back':
-        d.polygon([(m*6//8, m*2//8), (m*2//8, m//2), (m*6//8, m*6//8)], fill=c)
-    elif name == 'stop':
-        w = max(3, m//6)
-        d.line([m*2//8, m*2//8, m*6//8, m*6//8], fill=c, width=w)
-        d.line([m*6//8, m*2//8, m*2//8, m*6//8], fill=c, width=w)
-    elif name == 'echo':
-        d.polygon([(m*5//8, m*3//8), (m*7//8, m//2), (m*5//8, m*5//8)], fill=c)
-        d.line([m*2//8, m//2, m*7//8, m//2], fill=c, width=max(2, m//8))
-    elif name == 'map':
-        bw = max(2, m//10)
-        d.rectangle([m*1//8, m*1//8, m*7//8, m*7//8], outline=c, width=bw)
-        d.line([m//2, m*1//8, m//2, m*7//8], fill=c, width=bw)
-        d.line([m*1//8, m//2, m*7//8, m//2], fill=c, width=bw)
-    img_sm = img.resize((size, size), Image.LANCZOS)
-    ctkimg = ctk.CTkImage(light_image=img_sm, dark_image=img_sm, size=(size, size))
-    _icon_cache[key] = ctkimg
-    return ctkimg
+def _make_icon(name: str, size: int = 20, fg: str = '#00d9ff') -> ctk.CTkImage:\n    \"\"\"Generate modern icons with better styling.\"\"\"\n    key = (name, size, fg)\n    if key in _icon_cache:\n        return _icon_cache[key]\n\n    s2 = size * 2\n    r_, g_, b_ = int(fg[1:3], 16), int(fg[3:5], 16), int(fg[5:7], 16)\n    c = (r_, g_, b_, 255)\n    img = Image.new('RGBA', (s2, s2), (r_, g_, b_, 0))\n    d = ImageDraw.Draw(img)\n    m = s2\n    sw = max(2, m // 8)  # Stroke width\n\n    if name == 'host':\n        # Server icon - improved\n        d.rectangle([m*2//8, m*3//8, m*6//8, m*7//8], outline=c, width=sw, fill=(r_, g_, b_, 30))\n        d.line([m//2, m*1//8, m//2, m*2//8], fill=c, width=sw)\n        d.polygon([(m*3//8, m*2//8), (m//2, m*1//8), (m*5//8, m*2//8)], fill=c)\n        # Add dots\n        for i in range(3):\n            y = m*4//8 + i*m//6\n            d.ellipse([m*3//8, y, m*3//8+sw*2, y+sw*2], fill=c)\n    elif name == 'join':\n        # Connection icon\n        d.arc([m*1//8, m*2//8, m//2, m*6//8], 90, 270, fill=c, width=sw)\n        d.arc([m//2, m*2//8, m*7//8, m*6//8], 270, 90, fill=c, width=sw)\n        d.ellipse([m*4//8-sw, m*3//8-sw, m*4//8+sw, m*3//8+sw], fill=c)\n    elif name == 'back':\n        # Back arrow - modern\n        points = [(m*6//8, m*2//8), (m*2//8, m//2), (m*6//8, m*6//8)]\n        d.polygon(points, fill=c)\n        d.line([(m*6//8, m*2//8), (m*6//8, m*6//8)], fill=c, width=sw//2)\n    elif name == 'stop':\n        # Stop icon - rounded square\n        d.rectangle([m*2//8, m*2//8, m*6//8, m*6//8], outline=c, width=sw)\n    elif name == 'echo':\n        # Echo/Wave icon\n        for i in range(1, 4):\n            r = m * i // 12\n            d.arc([m//2-r, m//2-r, m//2+r, m//2+r], 0, 360, fill=c, width=sw//2)\n        d.ellipse([m//2-sw, m//2-sw, m//2+sw, m//2+sw], fill=c)\n    elif name == 'map':\n        # Map/location icon\n        d.rectangle([m*1//8, m*1//8, m*7//8, m*7//8], outline=c, width=sw)\n        d.line([m//2, m*1//8, m//2, m*7//8], fill=c, width=sw//2)\n        d.line([m*1//8, m//2, m*7//8, m//2], fill=c, width=sw//2)\n        r = m // 6\n        d.ellipse([m*5//8-r, m*3//8-r, m*5//8+r, m*3//8+r], fill=c)\n    elif name == 'play':\n        # Play icon\n        d.polygon([(m*2//8, m*1//8), (m*7//8, m//2), (m*2//8, m*7//8)], fill=c)\n    elif name == 'settings':\n        # Settings/gear icon\n        d.ellipse([m*3//8, m*3//8, m*5//8, m*5//8], outline=c, width=sw)\n        for angle in range(0, 360, 45):\n            x1 = m//2 + int((m*3.5//8) * (1 if angle % 90 == 0 else 0.7) * (1 if angle < 180 else -1))\n            y1 = m//2 + int((m*3.5//8) * (1 if angle % 90 == 45 else 0.7) * (1 if angle < 90 or angle > 270 else -1))\n            d.line([m//2, m//2, x1, y1], fill=c, width=sw//2)\n    \n    img_sm = img.resize((size, size), Image.LANCZOS)\n    ctkimg = ctk.CTkImage(light_image=img_sm, dark_image=img_sm, size=(size, size))\n    _icon_cache[key] = ctkimg\n    return ctkimg
