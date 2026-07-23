@@ -3,7 +3,7 @@
 import tkinter as tk
 from tkinter import scrolledtext
 import customtkinter as ctk
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw
 import platform
 from typing import Callable, Optional
 import threading
@@ -40,7 +40,8 @@ class Fonts:
     def __init__(self):
         ff = ('Segoe UI' if platform.system() == 'Windows'
               else 'Helvetica Neue' if platform.system() == 'Darwin'
-              else 'DejaVu Sans')\n        fm = ('Consolas' if platform.system() == 'Windows'
+              else 'DejaVu Sans')
+        fm = ('Consolas' if platform.system() == 'Windows'
               else 'Menlo' if platform.system() == 'Darwin'
               else 'DejaVu Sans Mono')
         self.title = (ff, 28, 'bold')
@@ -169,14 +170,99 @@ def modern_button(
 
 
 def status_badge(parent, text: str, status: str = 'info', font_size: int = 10) -> ctk.CTkLabel:
-    \"\"\"Create a modern status badge.\"\"\"
-    color_map = {\n        'ok': ColorPalette.OK,\n        'err': ColorPalette.ERR,\n        'warn': ColorPalette.WARN,\n        'info': ColorPalette.ACCENT,\n        'dim': ColorPalette.MUTED,\n    }\n    color = color_map.get(status, ColorPalette.ACCENT)\n    return ctk.CTkLabel(\n        parent,\n        text=text,\n        font=(Fonts().body[0], font_size, 'bold'),\n        text_color=color,\n        fg_color='transparent',\n    )
+    """Create a modern status badge."""
+    color_map = {
+        'ok': ColorPalette.OK,
+        'err': ColorPalette.ERR,
+        'warn': ColorPalette.WARN,
+        'info': ColorPalette.ACCENT,
+        'dim': ColorPalette.MUTED,
+    }
+    color = color_map.get(status, ColorPalette.ACCENT)
+    return ctk.CTkLabel(
+        parent,
+        text=text,
+        font=(Fonts().body[0], font_size, 'bold'),
+        text_color=color,
+        fg_color='transparent',
+    )
 
 
-def section_title(parent, text: str) -> ctk.CTkLabel:\n    \"\"\"Create a modern section title with accent line.\"\"\"\n    return ctk.CTkLabel(\n        parent,\n        text=text,\n        font=Fonts().heading,\n        text_color=ColorPalette.TEXT,\n        fg_color='transparent',\n    )
+def section_title(parent, text: str) -> ctk.CTkLabel:
+    """Create a modern section title with accent line."""
+    return ctk.CTkLabel(
+        parent,
+        text=text,
+        font=Fonts().heading,
+        text_color=ColorPalette.TEXT,
+        fg_color='transparent',
+    )
 
 
 _icon_cache = {}
 
 
-def _make_icon(name: str, size: int = 20, fg: str = '#00d9ff') -> ctk.CTkImage:\n    \"\"\"Generate modern icons with better styling.\"\"\"\n    key = (name, size, fg)\n    if key in _icon_cache:\n        return _icon_cache[key]\n\n    s2 = size * 2\n    r_, g_, b_ = int(fg[1:3], 16), int(fg[3:5], 16), int(fg[5:7], 16)\n    c = (r_, g_, b_, 255)\n    img = Image.new('RGBA', (s2, s2), (r_, g_, b_, 0))\n    d = ImageDraw.Draw(img)\n    m = s2\n    sw = max(2, m // 8)  # Stroke width\n\n    if name == 'host':\n        # Server icon - improved\n        d.rectangle([m*2//8, m*3//8, m*6//8, m*7//8], outline=c, width=sw, fill=(r_, g_, b_, 30))\n        d.line([m//2, m*1//8, m//2, m*2//8], fill=c, width=sw)\n        d.polygon([(m*3//8, m*2//8), (m//2, m*1//8), (m*5//8, m*2//8)], fill=c)\n        # Add dots\n        for i in range(3):\n            y = m*4//8 + i*m//6\n            d.ellipse([m*3//8, y, m*3//8+sw*2, y+sw*2], fill=c)\n    elif name == 'join':\n        # Connection icon\n        d.arc([m*1//8, m*2//8, m//2, m*6//8], 90, 270, fill=c, width=sw)\n        d.arc([m//2, m*2//8, m*7//8, m*6//8], 270, 90, fill=c, width=sw)\n        d.ellipse([m*4//8-sw, m*3//8-sw, m*4//8+sw, m*3//8+sw], fill=c)\n    elif name == 'back':\n        # Back arrow - modern\n        points = [(m*6//8, m*2//8), (m*2//8, m//2), (m*6//8, m*6//8)]\n        d.polygon(points, fill=c)\n        d.line([(m*6//8, m*2//8), (m*6//8, m*6//8)], fill=c, width=sw//2)\n    elif name == 'stop':\n        # Stop icon - rounded square\n        d.rectangle([m*2//8, m*2//8, m*6//8, m*6//8], outline=c, width=sw)\n    elif name == 'echo':\n        # Echo/Wave icon\n        for i in range(1, 4):\n            r = m * i // 12\n            d.arc([m//2-r, m//2-r, m//2+r, m//2+r], 0, 360, fill=c, width=sw//2)\n        d.ellipse([m//2-sw, m//2-sw, m//2+sw, m//2+sw], fill=c)\n    elif name == 'map':\n        # Map/location icon\n        d.rectangle([m*1//8, m*1//8, m*7//8, m*7//8], outline=c, width=sw)\n        d.line([m//2, m*1//8, m//2, m*7//8], fill=c, width=sw//2)\n        d.line([m*1//8, m//2, m*7//8, m//2], fill=c, width=sw//2)\n        r = m // 6\n        d.ellipse([m*5//8-r, m*3//8-r, m*5//8+r, m*3//8+r], fill=c)\n    elif name == 'play':\n        # Play icon\n        d.polygon([(m*2//8, m*1//8), (m*7//8, m//2), (m*2//8, m*7//8)], fill=c)\n    elif name == 'settings':\n        # Settings/gear icon\n        d.ellipse([m*3//8, m*3//8, m*5//8, m*5//8], outline=c, width=sw)\n        for angle in range(0, 360, 45):\n            x1 = m//2 + int((m*3.5//8) * (1 if angle % 90 == 0 else 0.7) * (1 if angle < 180 else -1))\n            y1 = m//2 + int((m*3.5//8) * (1 if angle % 90 == 45 else 0.7) * (1 if angle < 90 or angle > 270 else -1))\n            d.line([m//2, m//2, x1, y1], fill=c, width=sw//2)\n    \n    img_sm = img.resize((size, size), Image.LANCZOS)\n    ctkimg = ctk.CTkImage(light_image=img_sm, dark_image=img_sm, size=(size, size))\n    _icon_cache[key] = ctkimg\n    return ctkimg
+def _make_icon(name: str, size: int = 20, fg: str = '#00d9ff') -> ctk.CTkImage:
+    """Generate modern icons with better styling."""
+    key = (name, size, fg)
+    if key in _icon_cache:
+        return _icon_cache[key]
+
+    s2 = size * 2
+    r_, g_, b_ = int(fg[1:3], 16), int(fg[3:5], 16), int(fg[5:7], 16)
+    c = (r_, g_, b_, 255)
+    img = Image.new('RGBA', (s2, s2), (r_, g_, b_, 0))
+    d = ImageDraw.Draw(img)
+    m = s2
+    sw = max(2, m // 8)  # Stroke width
+
+    if name == 'host':
+        # Server icon - improved
+        d.rectangle([m*2//8, m*3//8, m*6//8, m*7//8], outline=c, width=sw, fill=(r_, g_, b_, 30))
+        d.line([m//2, m*1//8, m//2, m*2//8], fill=c, width=sw)
+        d.polygon([(m*3//8, m*2//8), (m//2, m*1//8), (m*5//8, m*2//8)], fill=c)
+        # Add dots
+        for i in range(3):
+            y = m*4//8 + i*m//6
+            d.ellipse([m*3//8, y, m*3//8+sw*2, y+sw*2], fill=c)
+    elif name == 'join':
+        # Connection icon
+        d.arc([m*1//8, m*2//8, m//2, m*6//8], 90, 270, fill=c, width=sw)
+        d.arc([m//2, m*2//8, m*7//8, m*6//8], 270, 90, fill=c, width=sw)
+        d.ellipse([m*4//8-sw, m*3//8-sw, m*4//8+sw, m*3//8+sw], fill=c)
+    elif name == 'back':
+        # Back arrow - modern
+        points = [(m*6//8, m*2//8), (m*2//8, m//2), (m*6//8, m*6//8)]
+        d.polygon(points, fill=c)
+        d.line([(m*6//8, m*2//8), (m*6//8, m*6//8)], fill=c, width=sw//2)
+    elif name == 'stop':
+        # Stop icon - rounded square
+        d.rectangle([m*2//8, m*2//8, m*6//8, m*6//8], outline=c, width=sw)
+    elif name == 'echo':
+        # Echo/Wave icon
+        for i in range(1, 4):
+            r = m * i // 12
+            d.arc([m//2-r, m//2-r, m//2+r, m//2+r], 0, 360, fill=c, width=sw//2)
+        d.ellipse([m//2-sw, m//2-sw, m//2+sw, m//2+sw], fill=c)
+    elif name == 'map':
+        # Map/location icon
+        d.rectangle([m*1//8, m*1//8, m*7//8, m*7//8], outline=c, width=sw)
+        d.line([m//2, m*1//8, m//2, m*7//8], fill=c, width=sw//2)
+        d.line([m*1//8, m//2, m*7//8, m//2], fill=c, width=sw//2)
+        r = m // 6
+        d.ellipse([m*5//8-r, m*3//8-r, m*5//8+r, m*3//8+r], fill=c)
+    elif name == 'play':
+        # Play icon
+        d.polygon([(m*2//8, m*1//8), (m*7//8, m//2), (m*2//8, m*7//8)], fill=c)
+    elif name == 'settings':
+        # Settings/gear icon
+        d.ellipse([m*3//8, m*3//8, m*5//8, m*5//8], outline=c, width=sw)
+        for angle in range(0, 360, 45):
+            x1 = m//2 + int((m*3.5//8) * (1 if angle % 90 == 0 else 0.7) * (1 if angle < 180 else -1))
+            y1 = m//2 + int((m*3.5//8) * (1 if angle % 90 == 45 else 0.7) * (1 if angle < 90 or angle > 270 else -1))
+            d.line([m//2, m//2, x1, y1], fill=c, width=sw//2)
+    
+    img_sm = img.resize((size, size), Image.LANCZOS)
+    ctkimg = ctk.CTkImage(light_image=img_sm, dark_image=img_sm, size=(size, size))
+    _icon_cache[key] = ctkimg
+    return ctkimg
